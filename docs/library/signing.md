@@ -104,8 +104,8 @@ signer's walk maps, and is refused rather than guessed at.
 
 ## In the CLI
 
-`atmos`, `atmos-path`, `atmos-encode` and `atmos-cbi` accept `sign-objects` and `signing-key=<path>`
-(or the two environment variables above):
+`atmos`, `atmos-path`, `atmos-encode`, `atmos-cbi`, `atmos-adm` and `atmos-iab` accept
+`sign-objects` and `signing-key=<path>` (or the two environment variables above):
 
 ```bash
 forge atmos-encode in.wav out.ec3 448 0 paths.json sign-objects signing-key=/path/to/key

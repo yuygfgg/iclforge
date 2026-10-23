@@ -1367,9 +1367,9 @@ Optional positional arguments, when omitted:
   [Atmos & JOC](../../concepts/atmos-joc.md) for why a decoder can tell the difference at all.
 - **`sign-objects`** (with **`signing-key=<path>`**): signs the object container's EMDF protection
   tag so a validating decoder reconstructs the objects instead of playing the bed. Honored by
-  `atmos`, `atmos-path`, `atmos-encode` and `atmos-cbi`; `atmos-adm` and `atmos-iab` do not take
-  it, and an AC-4 object stream (`codec=ac4`) has no such container to sign, so it is refused
-  there. Off unless you pass both — `sign-objects` alone with no key is an error. The key may also come from
+  `atmos`, `atmos-path`, `atmos-encode`, `atmos-cbi`, `atmos-adm` and `atmos-iab`; an AC-4 object
+  stream (`codec=ac4`) has no such container to sign, so it is refused there. Off unless you pass
+  both — `sign-objects` alone with no key is an error. The key may also come from
   `ICLFORGE_SIGNING_KEY_FILE` / `ICLFORGE_SIGNING_KEY` instead of `signing-key=`. The key is never
   stored by the tool; the algorithm is in-tree but the key is yours to provision. Full details in
   [Object signing](../../concepts/object-signing.md).

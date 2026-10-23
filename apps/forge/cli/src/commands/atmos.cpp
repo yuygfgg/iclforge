@@ -223,6 +223,12 @@ int run_atmos_objects_to_ac4(std::string_view source_kind, std::uint32_t sample_
                              const std::vector<std::span<const float>>& pcm,
                              std::string_view in_path, std::string_view out_path,
                              std::uint32_t bitrate, const Options& meta) {
+    if (meta.sign_objects) {
+        fmt::println(stderr,
+                     "error: sign-objects signs E-AC-3's EMDF object container; an AC-4 object "
+                     "stream carries no such signature");
+        return kExitUsage;
+    }
     if (sample_rate != 48000 && sample_rate != 44100) {
         fmt::println(stderr,
                      "error: {} objects need a 48 or 44.1 kHz source for AC-4 (its object "
@@ -1266,10 +1272,11 @@ int run_atmos_adm(std::string_view in_path, std::string_view out_path, std::uint
     std::vector<std::vector<float>> block(count, std::vector<float>(frame_samples));
     std::vector<std::span<const float>> views(count);
     std::vector<std::span<const float>> metered(6);
-    // Streamed out as encoded - no sign-objects on this command, so no
-    // defer case either.
+    // Streamed out as encoded - except under sign-objects, where the frames
+    // defer inside the sink because the signing pass below rewrites every one
+    // of them after this loop.
     EncodedStreamSink out_sink;
-    if (!out_sink.open(out_path, meta.keep_partial)) {
+    if (!out_sink.open(out_path, meta.keep_partial, /*defer=*/meta.sign_objects)) {
         return kExitOutput;
     }
 
@@ -1312,6 +1319,17 @@ int run_atmos_adm(std::string_view in_path, std::string_view out_path, std::uint
         progress.tick(start / frame_samples + 1);
     }
     progress.finish();
+    // Optional object signing, same as atmos-encode - see its call site's own
+    // comment, the key-failure plain return included.
+    const auto signed_count = apply_object_signing(out_sink.deferred(), meta);
+    if (!signed_count.has_value()) {
+        return kExitRuntime;
+    }
+    if (*signed_count > 0) {
+        status_println(status_stream(out_path),
+                       "  signed {} frames' EMDF object container with the supplied key",
+                       *signed_count);
+    }
     if (!out_sink.close()) {
         return kExitOutput;
     }
@@ -1398,8 +1416,11 @@ int run_atmos_iab(std::string_view in_path, std::string_view out_path, std::uint
     std::vector<std::vector<float>> block(count, std::vector<float>(frame_samples));
     std::vector<std::span<const float>> views(count);
     std::vector<std::span<const float>> metered(6);
+    // Streamed out as encoded - except under sign-objects, where the frames
+    // defer inside the sink because the signing pass below rewrites every one
+    // of them after this loop.
     EncodedStreamSink out_sink;
-    if (!out_sink.open(out_path, meta.keep_partial)) {
+    if (!out_sink.open(out_path, meta.keep_partial, /*defer=*/meta.sign_objects)) {
         return kExitOutput;
     }
 
@@ -1440,6 +1461,17 @@ int run_atmos_iab(std::string_view in_path, std::string_view out_path, std::uint
         progress.tick(start / frame_samples + 1);
     }
     progress.finish();
+    // Optional object signing, same as atmos-encode - see its call site's own
+    // comment, the key-failure plain return included.
+    const auto signed_count = apply_object_signing(out_sink.deferred(), meta);
+    if (!signed_count.has_value()) {
+        return kExitRuntime;
+    }
+    if (*signed_count > 0) {
+        status_println(status_stream(out_path),
+                       "  signed {} frames' EMDF object container with the supplied key",
+                       *signed_count);
+    }
     if (!out_sink.close()) {
         return kExitOutput;
     }

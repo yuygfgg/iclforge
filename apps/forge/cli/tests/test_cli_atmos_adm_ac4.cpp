@@ -349,6 +349,26 @@ std::optional<int> lag_samples_from_log(const std::string& log) {
 
 }  // namespace
 
+// AC-4 objects have no EMDF container to sign, so the shared ADM/IAB AC-4 branch refuses
+// sign-objects instead of silently writing an unsigned stream.
+TEST_CASE("forge atmos-adm codec=ac4 refuses sign-objects", "[cli][atmos-adm][ac4][signing]") {
+    const auto dir = scratch_dir();
+    const auto fixture_path = dir / "atmos_adm_ac4_signing_fixture.wav";
+    REQUIRE(write_fixture(fixture_path));
+
+    const auto out_path = dir / "atmos_adm_ac4_signing_out.ac4";
+    const auto log_path = dir / "atmos_adm_ac4_signing.log";
+    const auto rc = run_cli(
+        "atmos-adm \"" + fixture_path.string() + "\" \"" + out_path.string() +
+            "\" 256 \"\" codec=ac4 sign-objects",
+        log_path);
+    const auto log = read_log(log_path);
+    INFO(log);
+    CHECK(rc != 0);
+    CHECK_FALSE(fs::exists(out_path));
+    CHECK(log.find("carries no such signature") != std::string::npos);
+}
+
 TEST_CASE(
     "forge atmos-adm codec=ac4, decoded with objects_dir/adm_out, matches the ADM master's own "
     "positions, gains and timing",

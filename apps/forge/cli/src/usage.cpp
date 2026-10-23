@@ -895,8 +895,9 @@ void print_option_blocks(std::uint32_t mask) {
                      "the bare nodelta token. The encoders' first effort level "
                      "(planning/arithmetic-tiers.md): what a part with little time for the "
                      "search gives up, measured on the ESP32-S3 page");
-        fmt::println("  sign-objects      atmos/atmos-path/atmos-encode/atmos-cbi: write a keyed EMDF "
-                     "object signature (needs signing-key=); see docs/concepts/object-signing.md");
+        fmt::println("  sign-objects      atmos/atmos-path/atmos-encode/atmos-cbi/atmos-adm/"
+                     "atmos-iab: write a keyed EMDF object signature (needs signing-key=); see "
+                     "docs/concepts/object-signing.md");
         fmt::println("  verify-objects    decode/monitor: check each frame's EMDF object signature "
                      "against signing-key= instead of just playing it - a mismatch refuses the "
                      "command; omitted (the default) decodes signed and unsigned streams alike, "

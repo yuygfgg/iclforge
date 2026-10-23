@@ -371,6 +371,42 @@ TEST_CASE("forge atmos-adm parses, bridges and encodes a real ADM BWF master end
     }
 }
 
+// sign-objects is parsed globally, so atmos-adm used to accept and silently drop it. It now
+// defers the encoded frames and signs the EMDF object container exactly as atmos-encode does;
+// probe reports the tag without needing the key.
+TEST_CASE("forge atmos-adm signs the EMDF object container with sign-objects",
+          "[cli][atmos-adm][signing]") {
+    const auto dir = scratch_dir();
+    const auto fixture_path = dir / "atmos_adm_signing_fixture.wav";
+    REQUIRE(write_fixture(fixture_path));
+
+    const auto key_path = dir / "atmos_adm_signing.key";
+    {
+        std::ofstream key{key_path, std::ios::binary};
+        REQUIRE(key.is_open());
+        key << "not-a-real-key-just-test-material";
+    }
+
+    const auto out_path = dir / "atmos_adm_signed.ec3";
+    const auto log_path = dir / "atmos_adm_signed.log";
+    const auto rc = run_cli("atmos-adm \"" + fixture_path.string() + "\" \"" +
+                                out_path.string() + "\" 448 sign-objects signing-key=\"" +
+                                key_path.string() + "\"",
+                            log_path);
+    const auto log = read_log(log_path);
+    INFO(log);
+    CHECK(rc == 0);
+    REQUIRE(fs::exists(out_path));
+    CHECK(log.find("signed ") != std::string::npos);
+
+    const auto probe_log = dir / "atmos_adm_signed_probe.log";
+    REQUIRE(run_cli("probe \"" + out_path.string() + "\"", probe_log) == 0);
+    const auto probe = read_log(probe_log);
+    INFO(probe);
+    CHECK(probe.find("authenticity") != std::string::npos);
+    CHECK(probe.find("no tag") == std::string::npos);
+}
+
 TEST_CASE("forge atmos-adm reports a clear diagnosis for a file with no ADM programme",
          "[cli][atmos-adm]") {
     const auto dir = scratch_dir();

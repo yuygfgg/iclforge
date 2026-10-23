@@ -367,8 +367,8 @@ struct Options {
     // 'forge qc <file>' just reports the numbers, no pass/fail verdict.
     std::optional<std::string> qc_preset;
     iclforge::ac3::plan::Metadata p{};
-    // Atmos object signing (atmos/atmos-path/atmos-encode). Off unless the
-    // operator both asks (sign-objects) and provides a key - either
+    // Atmos object signing (atmos/atmos-path/atmos-encode/atmos-cbi/atmos-adm/atmos-iab). Off
+    // unless the operator both asks (sign-objects) and provides a key - either
     // signing-key=<path> here, or the ICLFORGE_SIGNING_KEY[_FILE] env vars
     // load_signing_key() falls back to. The key is never stored by this tool;
     // see docs/concepts/object-signing.md.

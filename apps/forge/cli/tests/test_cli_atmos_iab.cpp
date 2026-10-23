@@ -311,6 +311,40 @@ TEST_CASE("forge atmos-iab parses, bridges and encodes a real IAB fixture end to
     CHECK(saw_center_energy);
 }
 
+// Same gap as atmos-adm: sign-objects was parsed but never applied. It now defers the encoded
+// frames and signs the EMDF object container; probe reports the tag without needing the key.
+TEST_CASE("forge atmos-iab signs the EMDF object container with sign-objects",
+          "[cli][atmos-iab][signing]") {
+    const auto dir = scratch_dir();
+    const auto fixture_path = dir / "atmos_iab_signing_fixture.iab";
+    REQUIRE(write_fixture(fixture_path));
+
+    const auto key_path = dir / "atmos_iab_signing.key";
+    {
+        std::ofstream key{key_path, std::ios::binary};
+        REQUIRE(key.is_open());
+        key << "not-a-real-key-just-test-material";
+    }
+
+    const auto out_path = dir / "atmos_iab_signed.ec3";
+    const auto log_path = dir / "atmos_iab_signed.log";
+    const auto rc = run_cli("atmos-iab \"" + fixture_path.string() + "\" \"" + out_path.string() +
+                                "\" 448 sign-objects signing-key=\"" + key_path.string() + "\"",
+                            log_path);
+    const auto log = read_log(log_path);
+    INFO(log);
+    CHECK(rc == 0);
+    REQUIRE(fs::exists(out_path));
+    CHECK(log.find("signed ") != std::string::npos);
+
+    const auto probe_log = dir / "atmos_iab_signed_probe.log";
+    REQUIRE(run_cli("probe \"" + out_path.string() + "\"", probe_log) == 0);
+    const auto probe = read_log(probe_log);
+    INFO(probe);
+    CHECK(probe.find("authenticity") != std::string::npos);
+    CHECK(probe.find("no tag") == std::string::npos);
+}
+
 TEST_CASE("forge atmos-iab reports a clear diagnosis for a file with no IAB essence",
           "[cli][atmos-iab]") {
     const auto dir = scratch_dir();
